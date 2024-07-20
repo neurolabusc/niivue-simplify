@@ -1,10 +1,6 @@
 ### NiiVue voxels to mesh
 
-A basic example of simplifying meshes.
-
-### Usage
-
- - Open the [live demo](https://niivue.github.io/niivue-simplify/).
+A basic example of simplifying meshes. Open the [live demo](https://niivue.github.io/niivue-simplify/).
 
 ### Comparisons
 
