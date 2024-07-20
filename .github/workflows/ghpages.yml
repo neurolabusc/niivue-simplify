@@ -1,4 +1,6 @@
 name: Build and Deploy
+permissions:
+  id-token: write
 on:
   push:
     branches:
