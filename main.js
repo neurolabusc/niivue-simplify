@@ -20,7 +20,9 @@ async function createMxrapWorker() {
 async function main() {
   const niivueWorker = await createNiivueWorker()
   const MxrapWorker = await createMxrapWorker()
-  const WasmWorker = new Worker('./wasmWorker.js?rnd=' + Math.random())
+  const WasmWorker = await new Worker('./wasmWorker.js')
+  const Nii2meshWorker = await new Worker('./nii2meshWorker.js')
+
   const loadingCircle = document.getElementById('loadingCircle')
   let startTime = Date.now()
   function meshStatus(isTimed = true) {
@@ -56,7 +58,15 @@ async function main() {
     if (e.data.blob instanceof Blob) {
         var reader = new FileReader()
         reader.onload = () => {
-            console.log(reader.result)
+            loadMz3(reader.result)
+        }
+        reader.readAsArrayBuffer(e.data.blob)
+    }
+  }
+  Nii2meshWorker.onmessage = async function (e) {
+    if (e.data.blob instanceof Blob) {
+        var reader = new FileReader()
+        reader.onload = () => {
             loadMz3(reader.result)
         }
         reader.readAsArrayBuffer(e.data.blob)
@@ -117,7 +127,13 @@ async function main() {
           tris,
           shrinkValue
         })
-    } else if (methodSelect.value === 'wasm') {
+    } else if (methodSelect.value === 'niivue') {
+        niivueWorker.postMessage({
+          verts,
+          tris,
+          shrinkValue
+        })
+    } else {
         const meshBuffer = NVMeshUtilities.createMZ3(verts, tris, false)
         let mz3 = new Blob([meshBuffer], {
             type: 'application/octet-stream'
@@ -125,18 +141,20 @@ async function main() {
         let inName = `em${Math.round(Math.random() * 0xffffff)}.mz3`
         let fileMZ3 = new File([mz3], inName)
         let outName = `em${Math.round(Math.random() * 0xffffff)}.mz3`
-        WasmWorker.postMessage({
-            blob: fileMZ3,
-            percentage: shrinkValue,
-            simplify_name: outName,
-            agressiveness: 7,
-        })
-    } else {
-        niivueWorker.postMessage({
-          verts,
-          tris,
-          shrinkValue
-        })
+        if (methodSelect.value === 'wasm') {
+            WasmWorker.postMessage({
+                blob: fileMZ3,
+                percentage: shrinkValue,
+                simplify_name: outName,
+                agressiveness: 7,
+            })
+        } else {
+            Nii2meshWorker.postMessage({
+                blob: fileMZ3,
+                percentage: shrinkValue,
+                simplify_name: outName,
+            })
+        }
     }
   }
   function handleLocationChange(data) {
